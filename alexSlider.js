@@ -1,6 +1,6 @@
 /******************************************************
 * 
-* Project name: Vega IT Sourcing Alex Slider - Version 1.4.2
+* Project name: Vega IT Sourcing Alex Slider - Version 1.4.3
 * Author: Vega IT Sourcing Alex Slider by Aleksandar Gajic
 * 
 ******************************************************/
@@ -40,7 +40,7 @@
             auto: true,                 // Auto rotate items in slider
             pause: 3000,                // Pause between two animations
             width: -1,                  // Set width for li tags in slider
-            continuous: true,           // After sliding all items, return to first, otherwise will stop at last element
+            continues: true,           // After sliding all items, return to first, otherwise will stop at last element
             overedge: false,            // Animation effect to go over edge current item
             overedgePercentage: 12,     // Percentage of with/height to do overedge
             overedgeSpeed: 300,         // Speed of overedge animation
@@ -60,7 +60,11 @@
             galleryImageThumb: '',      // For thumbnail images in galery will be used first img tag in slider li tags. If you have thumbnail images with same image name but with some suffix then you can say what suffix is. Like in umbraco, all images have theirs thumbnails with _thumb suffix
             showGallery: false,         // Show/hide thumbnail images for navigation, it takes first img tag in li tag-s of slider
             counterText: ' of ',        // Text between counter numbers
-            complete: function () { }   // For additional scripts to execute after comleting initialization of 
+			classWrapper: 'inner-wrapper', // Additional wrapper class name
+			setWrapper: false, 			// Set additional wrapper	
+            complete: function () { },   // For additional scripts to execute after comleting initialization of 
+			lastItemCallBack: false, 	// Call function on last item.
+			lastItemFunction: function () { }
         };
 
         options = $.extend(defaults, options);
@@ -79,216 +83,221 @@
                 counter, heightBody, newHeight, html, cssClass = '', imageUrl, length, extension, counterT,
                 litag, correction, currentWidth, marginLeft, animationMarginLeft, selector, wplus, index,
                 tagPosition, previous, differ, nextDirection, difference, selectedIndex, selectedItem, previousItem,
-                verticalWrapperSelector = '.' + options.verticalWrapper, marginTop, $liTag, cssCalss;
+                verticalWrapperSelector = '.' + options.verticalWrapper, marginTop, $liTag, cssCalss, supreme, finalSuppreme, previousCurrentItem;
 
+            if (options.navigation) {
+                slectroForGalleryAndNavigation = navigationSelector;
+            }
+
+            if (options.showGallery) {
+                if (slectroForGalleryAndNavigation !== '') {
+                    slectroForGalleryAndNavigation += ', ';
+                }
+
+                slectroForGalleryAndNavigation += gallerySelector;
+            }
+
+            if (options.playPause) {
+                options.auto = false;
+            }
+
+            function checkContinues() {				
+                if (!options.continues && (currentItemIndex == totalItems || currentItemIndex == 1)) {					
+                    clearTimeout(timeout);
+                    disableAutoForce = true;
+                    if (options.showControls) {
+                        if (currentItemIndex == totalItems) {
+                            $(nextButtonSelector, obj).addClass('disabled');
+                            $(previousButtonSelector, obj).removeClass('disabled');
+                        }
+
+                        if (currentItemIndex == 1) {
+                            $(previousButtonSelector, obj).addClass('disabled');
+                            $(nextButtonSelector, obj).removeClass('disabled');
+                        }
+                    }
+                } else {
+                    if (options.showControls) {
+                        $(nextButtonSelector, obj).removeClass('disabled');
+                        $(previousButtonSelector, obj).removeClass('disabled');
+                    }
+                }
+            }
+
+            function setTags(isNext, idx) {
+                tagPosition = isNext ? 'first' : 'last';
+                $('ul:first > li:' + tagPosition, obj).wrap("<ul class='wrapping'>");
+                litag = $('ul.wrapping', obj).html();
+                $('ul.wrapping', obj).remove();
+                if (isNext) {
+                    $('ul:first', obj).append(litag);
+                } else {
+                    $('ul:first > li:first', obj).before(litag);
+                }
+
+                if (idx !== 9999) {
+                    cssClass = $('ul:first > li', obj).eq(t - 1).attr('class');
+                    currentItemIndex = parseInt(cssClass.split('tagorder-')[1], 10);
+                    checkContinues();
+                }
 				
-			if (!initialization) {
+                if (options.counter) {
+                    if ($.trim(cssClass) !== '') {
+                        $(obj).next().html(currentItemIndex + options.counterText + totalItems);
+                    }
+                }
+				
+				if (options.lastItemCallBack && currentItemIndex == 1 && previousCurrentItem === totalItems) {					
+					setTimeout(options.lastItemFunction);
+				}
+				
+				previousCurrentItem = currentItemIndex;
+            }
+
+            function setHeightOfActiveTag(pos, stopAnimation) {
+                if (options.autoresize) {
+                    if (stopAnimation) {
+                        $(obj).height($('ul:first > li', obj).eq(pos).height());
+                    }
+
+                    newHeight = $('ul:first > li', obj).eq(pos).height();
+                    $(obj).animate(
+						{ height: newHeight + 10 },
+						options.speed * 3 / 4);
+                }
+            }
+
+            function commenceAnimation(direction, clicked, disableClick) {
+                if (!disableClick) {
+                    if (s != 1 && !animationStarted) {
+                        animationStarted = true;
+                        switch (direction) {
+                        case 'forward':
+                            leftright = 1;
+                            ot = t - 1;
+                            setTags(true, ot);
+                            setHeightOfActiveTag(ot);
+                            break;
+                        case 'previous':
+                            leftright = 0 - 1;
+                            ot = t + 1;
+                            setTags(false, t - 1);
+                            setHeightOfActiveTag(t - 1);
+                            break;
+                        default:
+                            break;
+                        }
+
+                        if (options.navigation) {
+                            selector = $('ul:first > li', obj).eq(t - 1).attr('class');
+                            $(navigationSelector, obj).each(function () {
+                                if ($(this).hasClass(selector)) {
+                                    $(this).addClass('cur');
+                                } else {
+                                    $(this).removeClass('cur');
+                                }
+                            });
+                        }
+
+                        if (options.showGallery) {
+                            selector = $('ul:first > li', obj).eq(t - 1).attr('class');
+                            $(gallerySelector, obj).each(function () {
+                                if ($(this).hasClass(selector)) {
+                                    $(this).addClass('cur');
+                                } else {
+                                    $(this).removeClass('cur');
+                                }
+                            });
+                        }
+
+                        if (options.fadeEffect) {
+                            $('ul:first > li', obj).eq(ot - 1).fadeOut(options.speed);
+                            $('ul:first > li', obj).eq(t - 1).fadeIn(options.speed, function () {
+                                animationStarted = false;
+                            });
+                        } else {
+                            correction = false;
+                            currentWidth = $('ul:first', obj).width();
+                            animationMarginLeft = p + (doOverEdge * leftright * p * (options.overedgePercentage / 100));
+                            animationMarginTop = hp + (doOverEdge * leftright * hp * (options.overedgePercentage / 100));
+                            marginLeft = (1 - ot) * w;
+                            marginTop = (1 - ot) * h;
+                            if (options.itemsToDisplay > 2) {
+                                marginLeft = animationMarginLeft;
+                                if (leftright < 0) {
+                                    marginLeft = animationMarginLeft - w * 2;
+                                }
+
+                                animationMarginLeft -= w;
+                                correction = true;
+                                index = t;// - options.itemsToDisplay;
+                                index = index < 0 ? 0 : index;
+                                html = $('ul:first > li', obj).eq(index).html();
+                                html = '<li style="float:left">' + html + '</li>';
+                                $('ul:first', obj).width(currentWidth + 2 * w)
+													.prepend(html)
+													.append(html);
+                            }
+
+                            if (options.orientationVertical) {
+                                $('ul:first', obj).css('margin-top', marginTop + 'px');
+                                $('ul:first', obj).animate({ 'margin-top': animationMarginTop }, options.speed,
+                                                            function () {
+                                                                if (options.overedge) {
+                                                                    $('ul:first', obj).animate({ 'margin-top': hp }, options.overedgeSpeed, function () { animationStarted = false; });
+                                                                } else { animationStarted = false; }
+                                                            });
+                            }
+                            else {
+                                $('ul:first', obj).css('margin-left', marginLeft + 'px');
+                                $('ul:first', obj).animate({ 'margin-left': animationMarginLeft },
+														options.speed, function () {
+                                                            if (options.overedge) {
+                                                                $('ul:first', obj).animate({ 'margin-left': p }, options.speed / 3, function () { animationStarted = false; });
+                                                            } else {
+                                                                animationStarted = false;
+                                                                if (correction) {
+                                                                    $('ul:first > li:first', obj).remove();
+                                                                    $('ul:first > li:last', obj).remove();
+                                                                    $('ul:first', obj).width(currentWidth);
+                                                                    $('ul:first', obj).css('margin-left', animationMarginLeft + w);
+                                                                }
+                                                            }
+														});
+                            }
+                        }
+                    }
+                }
+
+                if (clicked || disableClick) {
+                    clearTimeout(timeout);
+                    if (!options.disableOnClick && !disableAutoForce) {
+                        timeout = setTimeout(function () {
+                            commenceAnimation('forward', false, false);
+                        }, options.speed + options.pause);
+                    }
+                }
+
+                if (options.auto && direction == 'forward' && !clicked) {
+                    timeout = setTimeout(function () {
+                        commenceAnimation('forward', false, false);
+                    }, options.speed + options.pause);
+                }
+            }
+
+            if (options.autoresize) {
+                heightBody = $('ul:first > li:first', obj).height();
+                $(obj).css('height', heightBody + 'px');
+            }
+
+            if (options.overedge) {
+                doOverEdge = 1;
+            } else {
+                doOverEdge = 0;
+            }
+
+            if (!initialization) {
                 $(obj).addClass('initialized');
-				if (options.navigation) {
-					slectroForGalleryAndNavigation = navigationSelector;
-				}
-	
-				if (options.showGallery) {
-					if (slectroForGalleryAndNavigation !== '') {
-						slectroForGalleryAndNavigation += ', ';
-					}
-	
-					slectroForGalleryAndNavigation += gallerySelector;
-				}
-	
-				if (options.playPause) {
-					options.auto = false;
-				}
-	
-				function checkContinous() {
-					if (!options.continuous && (currentItemIndex == itemsInSlider || currentItemIndex == 1)) {
-						clearTimeout(timeout);
-						disableAutoForce = true;
-						if (options.showControls) {
-							if (currentItemIndex == itemsInSlider) {
-								$(nextButtonSelector, obj).addClass('disabled');
-								$(previousButtonSelector, obj).removeClass('disabled');
-							}
-	
-							if (currentItemIndex == 1) {
-								$(previousButtonSelector, obj).addClass('disabled');
-								$(nextButtonSelector, obj).removeClass('disabled');
-							}
-						}
-					} else {
-						if (options.showControls) {
-							$(nextButtonSelector, obj).removeClass('disabled');
-							$(previousButtonSelector, obj).removeClass('disabled');
-						}
-					}
-				}
-	
-				function setTags(isNext, idx) {
-					tagPosition = isNext ? 'first' : 'last';
-					$('ul:first > li:' + tagPosition, obj).wrap("<ul class='wrapping'>");
-					litag = $('ul.wrapping', obj).html();
-					$('ul.wrapping', obj).remove();
-					if (isNext) {
-						$('ul:first', obj).append(litag);
-					} else {
-						$('ul:first > li:first', obj).before(litag);
-					}
-	
-					if (idx !== 9999) {
-						cssClass = $('ul:first > li', obj).eq(ot).attr('class');
-						currentItemIndex = parseInt(cssClass.split('tagorder-')[1], 10);
-						checkContinous();
-					}
-	
-					if (options.counter) {
-						if ($.trim(cssClass) !== '') {
-							$(obj).next().html(currentItemIndex + options.counterText + totalItems);
-						}
-					}
-				}
-	
-				function setHeightOfActiveTag(pos, stopAnimation) {
-					if (options.autoresize) {
-						if (stopAnimation) {
-							$(obj).height($('ul:first > li', obj).eq(pos).height());
-						}
-	
-						newHeight = $('ul:first > li', obj).eq(pos).height();
-						$(obj).animate(
-							{ height: newHeight + 10 },
-							options.speed * 3 / 4);
-					}
-				}
-	
-				function commenceAnimation(direction, clicked, disableClick) {
-					if (!disableClick) {
-						if (s != 1 && !animationStarted) {
-							animationStarted = true;
-							switch (direction) {
-							case 'forward':
-								leftright = 1;
-								ot = t - 1;
-								setTags(true, ot);
-								setHeightOfActiveTag(ot);
-								break;
-							case 'previous':
-								leftright = 0 - 1;
-								ot = t + 1;
-								setTags(false, t - 1);
-								setHeightOfActiveTag(t - 1);
-								break;
-							default:
-								break;
-							}
-	
-							if (options.navigation) {
-								selector = $('ul:first > li', obj).eq(t - 1).attr('class');
-								$(navigationSelector, obj).each(function () {
-									if ($(this).hasClass(selector)) {
-										$(this).addClass('cur');
-									} else {
-										$(this).removeClass('cur');
-									}
-								});
-							}
-	
-							if (options.showGallery) {
-								selector = $('ul:first > li', obj).eq(t - 1).attr('class');
-								$(gallerySelector, obj).each(function () {
-									if ($(this).hasClass(selector)) {
-										$(this).addClass('cur');
-									} else {
-										$(this).removeClass('cur');
-									}
-								});
-							}
-	
-							if (options.fadeEffect) {
-								$('ul:first > li', obj).eq(ot - 1).fadeOut(options.speed);
-								$('ul:first > li', obj).eq(t - 1).fadeIn(options.speed, function () {
-									animationStarted = false;
-								});
-							} else {
-								correction = false;
-								currentWidth = $('ul:first', obj).width();
-								animationMarginLeft = p + (doOverEdge * leftright * p * (options.overedgePercentage / 100));
-								animationMarginTop = hp + (doOverEdge * leftright * hp * (options.overedgePercentage / 100));
-								marginLeft = (1 - ot) * w;
-								marginTop = (1 - ot) * h;
-								if (options.itemsToDisplay > 2) {
-									marginLeft = animationMarginLeft;
-									wplus = 0;
-									if (leftright < 0) {
-										marginLeft -= w * (options.itemsToDisplay - 1);
-									}
-	
-									animationMarginLeft -= w;
-									correction = true;
-									index = t - options.itemsToDisplay;
-									index = index < 0 ? 0 : index;
-									html = $('ul:first > li', obj).eq(index).html();
-									html = '<li style="float:left">' + html + '</li>';
-									$('ul:first', obj).width(currentWidth + 2 * w)
-														.prepend(html)
-														.append(html);
-								}
-	
-								if (options.orientationVertical) {
-									$('ul:first', obj).css('margin-top', marginTop + 'px');
-									$('ul:first', obj).animate({ 'margin-top': animationMarginTop }, options.speed,
-																function () {
-																	if (options.overedge) {
-																		$('ul:first', obj).animate({ 'margin-top': hp }, options.overedgeSpeed, function () { animationStarted = false; });
-																	} else { animationStarted = false; }
-																});
-								}
-								else {
-									$('ul:first', obj).css('margin-left', marginLeft + 'px');
-									$('ul:first', obj).animate({ 'margin-left': animationMarginLeft },
-															options.speed, function () {
-																if (options.overedge) {
-																	$('ul:first', obj).animate({ 'margin-left': p }, options.speed / 3, function () { animationStarted = false; });
-																} else {
-																	animationStarted = false;
-																	if (correction) {
-																		$('ul:first > li:first', obj).remove();
-																		$('ul:first > li:last', obj).remove();
-																		$('ul:first', obj).width(currentWidth);
-																		$('ul:first', obj).css('margin-left', animationMarginLeft + w + wplus);
-																	}
-																}
-															});
-								}
-							}
-						}
-					}
-	
-					if (clicked || disableClick) {
-						clearTimeout(timeout);
-						if (!options.disableOnClick && !disableAutoForce) {
-							timeout = setTimeout(function () {
-								commenceAnimation('forward', false, false);
-							}, options.speed + options.pause);
-						}
-					}
-	
-					if (options.auto && direction == 'forward' && !clicked) {
-						timeout = setTimeout(function () {
-							commenceAnimation('forward', false, false);
-						}, options.speed + options.pause);
-					}
-				}
-	
-				if (options.autoresize) {
-					heightBody = $('ul:first > li:first', obj).height();
-					$(obj).css('height', heightBody + 'px');
-				}
-	
-				if (options.overedge) {
-					doOverEdge = 1;
-				} else {
-					doOverEdge = 0;
-				}
 
                 counter = 1;
                 $('ul:first > li', obj).each(function () {
@@ -299,7 +308,7 @@
                 h = $('ul:first > li:first', obj).height();
 
                 itemsInSlider = s = $('ul:first > li', obj).length;
-                w = $('ul:first > li', obj).width();
+                w = $('ul:first > li:first', obj).width();
 
                 if ($('ul:first > li img', obj).length) {
                     $('ul:first > li img', obj).each(function () {
@@ -316,9 +325,7 @@
                 }
 
                 if (options.width !== -1) {
-                    w = options.width;
-                    $('ul:first > li', obj).width(w);
-                    $('ul:first > li > img', obj).width(w);
+                    w = options.width;                                       
                 }
 
                 if (options.showGallery) {
@@ -352,7 +359,7 @@
                 if (options.showControls && s != 1) {
                     html = ' <span class="' + options.prevBtnClass + '"><a href=\"javascript:void(0);\"';
 
-                    if (!options.continuous) {
+                    if (!options.continues) {
                         html += 'class="disabled"';
                     }
                     html += ' >' + options.prevBtnText + '</a></span>';
@@ -466,10 +473,32 @@
                     }
                 }
 
-                if (s == 2) {
-                    s = 4;
+                if (s == 2 || (s <= (options.itemsToDisplay + 3) && options.itemsToDisplay > 1)) {
+                    s *= 2;
                     t = counterT = options.fadeEffect ? 2 : 3;
-
+					if (options.itemsToDisplay > 1) {
+						t = Math.ceil(s / 2);
+						if (!options.fadeEffect) {
+							if (options.orientationVertical) {
+								$('ul:first', obj).css('margin-top', (1 - t) * h + 'px');
+							} else {
+								$('ul:first', obj).css('margin-left', (1 - t) * w + 'px');
+							}
+						}
+						 
+						supreme = t - options.itemsToDisplay;
+						if (supreme <= 0) {
+							finalSuppreme = 2;
+						} else {
+							finalSuppreme = Math.floor(supreme / 2) + 2;
+							finalSuppreme = supreme % 2 === 0 ? finalSuppreme + 1 : finalSuppreme;
+						}
+												
+						for (i = 0; i < finalSuppreme; i++){
+							setTags(false, 9999);
+						}
+					}
+										
                     litag = $('ul:first', obj).html();
                     $('ul:first', obj).append(litag);
                 }
@@ -494,6 +523,10 @@
                         $('ul:first', obj).css('width', s * w)
                                             .find('> li')
                                             .css('float', 'left');
+						
+						if (options.setWrapper) {
+							$('ul:first', obj).wrap('<div class="' + options.classWrapper + '"/>');
+						}
                     }
                 }
 
@@ -527,7 +560,7 @@
                                 previousItem = $(previous).attr('class');
                                 selectedItem = $(this).attr('class');
 
-                                checkContinous();
+                                checkContinues();
 
                                 $(this).addClass('cur');
                                 selectedIndex = $('ul:first > li.' + selectedItem, obj).index();
