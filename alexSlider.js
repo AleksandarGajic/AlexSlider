@@ -1,9 +1,9 @@
-//
-// Copyright © 2011 
-// Aleksandar Gajic
-//
-// Alex Slider
-//
+/******************************************************
+ * 
+ * Project name: Vega IT Sourcing Alex Slider - Version 1.4.1
+ * Author: Vega IT Sourcing Alex Slider by Aleksandar Gajic
+ * 
+******************************************************/
 // Script required
 // jquery.js version 1.4.2 or above
 //
@@ -23,72 +23,58 @@
 //	</div>
 //
 // Inside li tags you can put what ever you want, not just image tag.
-//
-// Recommended styles for gallery
-//	.preview_gallery { width: 100%;}
-//	.preview_gallery ul { list-style: none; position: relative; float: left; display: block; left: 50%; }
-//	.preview_gallery ul li { position: relative; float: left; display: block; right: 50%; }
-//	.preview_gallery ul li img {width: 50px !important; height: 50px !important;}
 
 (function ($) {
 	$.fn.Slider = function (options) {
         var defaults = {
-            prevBtnClass: 'prevBtn',
-            prevBtnText: 'Previous',
-            nextBtnClass: 'nextBtn',
-            nextBtnText: 'Next',
-			playBtnText: 'Play',
-			pauseBtnText: 'Pause',
-			playBtnClass: 'playBtn',
-			pauseBtnClass: 'pauseBtn',
-            showControls: true,
-            speed: 600,
-            auto: true,
-            pause: 3000,
-            width: -1,
-            continuous: true,
-            overedge: false,
-            autoresize: false,
-			navigationWrapperClass : 'navigation-controls',
-			navigationClass : 'thumbNav',
-            navigation: false,
-            counter: false,
-            fadeEffect: false,
-            disableOnClick: true,
-			playPause: false,
-			timeToStartPlay : 0,
-			galleryClass : 'preview_gallery',
-			galleryImageThumb : '',
-			showGallery : false,
-			complete: function() {}
+            prevBtnClass: 'prevBtn',		// Css class for previous button
+            prevBtnText: 'Previous',		// Text for previous button
+            nextBtnClass: 'nextBtn',		// Css class for next button
+            nextBtnText: 'Next',			// Text for next button
+			playBtnText: 'Play',			// Text for play button
+			pauseBtnText: 'Pause',			// Text for pause button
+			playBtnClass: 'playBtn',		// Css class for play button
+			pauseBtnClass: 'pauseBtn',		// Css class for pause button
+            showControls: true,				// Show next previous buttons
+            speed: 600,						// Speed for completing animation
+            auto: true,						// Auto rotate items in slider
+            pause: 3000,					// Pause between two animations
+            width: -1,						// Set width for li tags in slider
+            continuous: true,				// After sliding all items, return to first, otherwise will stop at last element
+            overedge: false,				// Animation effect to go over edge current item
+            autoresize: false,				// Auto risize slider elements
+			navigationWrapperClass : 'navigation-controls', // Css class for navigation ul list
+			navigationClass : 'thumbNav',	// Css class for navigation items	
+            navigation: false,				// Show/hide navigation
+            counter: false,					// Show/hide counter of items (1 of 5)
+            fadeEffect: false,				// Animation is fade effect
+			itemsToDisplay: 1,				// How many items are displayed
+            disableOnClick: false,			// After clicking on next, previous, or some button on navigation auto sliding is turned off
+			playPause: false,				// Show/hide play pause buttons
+			timeToStartPlay : 0,			// Time after clicking play to start animation
+			galleryClass : 'preview-gallery',	// Css class for gallery with tumbnail images
+			galleryImageThumb : '',				// For thumbnail images in galery will be used first img tag in slider li tags. If you have thumbnail images with same image name but with some suffix then you can say what suffix is. Like in umbraco, all images have theirs thumbnails with _thumb suffix
+			showGallery : false,			// Show/hide thumbnail images for navigation, it takes first img tag in li tag-s of slider
+			counterText : ' of ',			// Text between counter numbers
+			complete: function() {}			// For additional scripts to execute after comleting initialization of 
         };
 
-        var options = $.extend(defaults, options);
+        options = $.extend(defaults, options);
 
         this.each(function () {			
-            var s;
-            var currentItemIndex = 1;
-            var doOverEdge;
-            var indexOfActiveTag = 1;
-            var leftright;
-            var animationStarted = false;
-            var obj = $(this);
-            var initialization = $(obj).hasClass('initialized');
-            var totalItems;
-            var disablePrevious = false;
-            var disableNext = false;
-            var disableAutoForce = false;
-            var nextButtonSelector = 'span.' + options.nextBtnClass + ' a';
-            var previousButtonSelector = 'span.' + options.prevBtnClass + ' a';
-			var playButtonSelector = 'span.' + options.playBtnClass;
-			var pauseButtonSelector = 'span.' + options.pauseBtnClass;
-			var navigationSelector = '.' + options.navigationWrapperClass + ' ul.'+ options.navigationClass +' li a';
-			var currentNavigationSelector = '.' + options.navigationWrapperClass + ' ul.'+ options.navigationClass +' li a.cur';
-			var gallerySelector = '.' + options.galleryClass + ' ul li a';
-			var currentGallerySelector = '.' + options.galleryClass + ' ul li a.cur';
-			var slectroForGalleryAndNavigation = '';
-            var itemsInSlider;
-			var timeout;
+            var s, currentItemIndex = 1, doOverEdge, indexOfActiveTag = 1, leftright,
+            	animationStarted = false, obj = $(this), initialization = $(obj).hasClass('initialized'),
+            	totalItems, disableAutoForce = false, nextButtonSelector = 'span.' + options.nextBtnClass + ' a',
+            	previousButtonSelector = 'span.' + options.prevBtnClass + ' a', playButtonSelector = 'span.' + options.playBtnClass,
+            	pauseButtonSelector = 'span.' + options.pauseBtnClass, 
+            	navigationSelector = '.' + options.navigationWrapperClass + ' ul.'+ options.navigationClass +' li a',
+            	currentNavigationSelector = '.' + options.navigationWrapperClass + ' ul.'+ options.navigationClass +' li a.cur',
+            	gallerySelector = '.' + options.galleryClass + ' ul li a',
+            	currentGallerySelector = '.' + options.galleryClass + ' ul li a.cur',
+            	slectroForGalleryAndNavigation = '', itemsInSlider, timeout, h, i, w, t, ot, p, 
+            	counter, heightBody, newHeight, html, cssClass, imageUrl, index, length, extension, counterT,
+            	litag, correction, currentWidth, marginLeft, animationMarginLeft, selector, wplus, index,
+            	tagPosition, previous, differ, nextDirection, difference, selectedIndex, selectedItem, previousItem;
 					
 			if (options.navigation) {
 				slectroForGalleryAndNavigation = navigationSelector;
@@ -111,13 +97,19 @@
                     if (stopAnimation) {
                         $(obj).height($($('ul:first > li', obj)[pos]).height());
                     }
-                    var newHeight = $($('ul:first > li', obj)[pos]).height();
+					
+                    newHeight = $($('ul:first > li', obj)[pos]).height();
                     $(obj).animate(
 						{ height: newHeight + 10 },
 						options.speed * 3 / 4);
                 }
             }
-
+			
+			if (options.autoresize) {
+				heightBody = $('ul:first > li:first', obj).height();
+				$(obj).css('height', heightBody + 'px');
+			}
+			
             if (options.overedge) {
                 doOverEdge = 1;
             } else {
@@ -127,26 +119,26 @@
             if (!initialization) {
                 $(obj).addClass('initialized');
 
-                var counter = 1;
+                counter = 1;
                 $('ul:first > li', obj).each(function () {
                     $(this).addClass('tagorder-' + counter);
                     counter++;
                 });
 
                 itemsInSlider = s = $('ul:first > li', obj).length;
-                var w = $('ul:first > li', obj).width();
+                w = $('ul:first > li', obj).width();
 
                 if ($('ul:first > li img', obj).length) {
                     $('ul:first > li img', obj).each(function () {
                         $($('ul:first > li img', obj)[0]).load(function () {
-                            var h = $('ul:first > li', obj).height();
+                            h = $('ul:first > li', obj).height();
                             if ($(obj).height < h) {
                                 $(obj).height(h);
                             }
                         });
                     });
                 } else {
-                    var h = $('ul:first li', obj).height();
+                    h = $('ul:first li', obj).height();
                     $(obj).height(h);
                 }
 
@@ -158,12 +150,12 @@
                 }
 				
 				if (options.showGallery) {
-					var html = '<div class="' + options.galleryClass + '">';
+					html = '<div class="' + options.galleryClass + '">';
 					html += '<ul>';				
 					
-					var imageUrl = '';
-					for (var i = 0; i < s; i++) {
-						var cssClass;
+					imageUrl = '';
+					for (i = 0; i < s; i++) {
+						cssClass;
 						if (i == 0) {
 							cssClass = (i + 1) + ' cur';
 						} else {
@@ -171,8 +163,15 @@
 						}
 						
 						$liTag = $($('ul:first > li', obj)[i]);
-						imageUrl = $liTag.children('img:first').attr('src') + options.galleryImageThumb;
-						html += '<li><a href="javascript:;" class="tagorder-' + cssClass + '"><img src="' + imageUrl +'" alt="image1"/></a></li>';
+						imageUrl = $liTag.children('img:first').attr('src');
+						if (options.galleryImageThumb != '') {
+							index = imageUrl.lastIndexOf('.');
+							length = imageUrl.length;
+							extension = imageUrl.substr(index + 1, length);
+							imageUrl = imageUrl.substr(0, index) + options.galleryImageThumb + '.' + extension;
+						}
+						
+						html += '<li><a href="javascript:;" class="tagorder-' + cssClass + '"><img src="' + imageUrl +'" alt="image"/></a></li>';
 					}							
 					html +=	'</ul>';
 					html += '</div>';
@@ -180,7 +179,7 @@
 				}			
 
                 if (options.showControls && s != 1) {
-                    var html = ' <span class="' + options.prevBtnClass + '"><a href=\"javascript:void(0);\"';
+                    html = ' <span class="' + options.prevBtnClass + '"><a href=\"javascript:void(0);\"';
 
                     if (!options.continuous) {
                         html += 'class="disabled"';
@@ -191,7 +190,7 @@
                 };
 				
 				if (options.playPause && s != 1) {
-					var html = ' <span class="' + options.playBtnClass + '"><a href=\"javascript:void(0);\"';                    
+					html = ' <span class="' + options.playBtnClass + '"><a href=\"javascript:void(0);\"';                    
                     html += ' >' + options.playBtnText + '</a></span>';
                     html += ' <span class="' + options.pauseBtnClass + '"><a href=\"javascript:void(0);\">' + options.pauseBtnText + '</a></span>';
                     $(obj).append(html);					
@@ -249,17 +248,17 @@
                 totalItems = s;
 
                 if (options.navigation && s > 1) {
-                    var csscalss = '';
+                	cssCalss = '';
                     html = '<div class="' + options.navigationWrapperClass + '">';
                     html += '<ul class="' + options.navigationClass + '">';
-                    for (var i = 0; i < s; i++) {
+                    for (i = 0; i < s; i++) {
                         if (i == 0) {
-                            cssclass = (i + 1) + ' cur';
+                        	cssCalss = (i + 1) + ' cur';
                         } else {
-                            cssclass = (i + 1) + '';
+                        	cssCalss = (i + 1) + '';
                         }
 
-                        html += '<li><a href="javascript:;" class="tagorder-' + cssclass + '"><span>' + (i + 1) + '</span></a></li>';
+                        html += '<li><a href="javascript:;" class="tagorder-' + cssCalss + '"><span>' + (i + 1) + '</span></a></li>';
                     }
 
                     html += '</ul>';
@@ -270,18 +269,18 @@
                 h += 100;
                 obj.height(h);
                 obj.css("overflow", "hidden");
-                var t = Math.ceil(s / 2);
+                t = Math.ceil(s / 2);
                 $('ul:first', obj).height(h);
                 $('ul:first > li', obj).height(h);
-                var counterT = t;
+                counterT = t;
                 if (s > 2) {
                     if (s % 2 == 0) {
                         counterT++;
                     }
 
-                    for (var i = 0; i < counterT; i++) {
+                    for (i = 0; i < counterT; i++) {
                         $('ul:first > li:first', obj).wrap('<ul class="wrapping">');
-                        var litag = $('ul.wrapping', obj).html();
+                        litag = $('ul.wrapping', obj).html();
                         $('ul.wrapping', obj).remove();
                         $('ul:first', obj).append(litag);
                     };
@@ -299,12 +298,11 @@
                         t = counterT = 3;
                     }
 
-                    var litag = $('ul:first', obj).html();
+                    litag = $('ul:first', obj).html();
                     $('ul:first', obj).append(litag);
                 }
-
-                var ts = s - 1;
-                var p = ((t - 1) * w * -1);
+                
+                p = ((t - 1) * w * -1);
 
                 if (options.fadeEffect) {
                     $('ul:first', obj).css('width', w);
@@ -332,8 +330,7 @@
 									commenceAnimation('forward', true, false);									
 								}
 							} else {							
-								animationStarted = true;
-								var previous;
+								animationStarted = true;								
 								
 								if ($(currentNavigationSelector, obj).length) {
 									previous = $(currentNavigationSelector, obj);
@@ -344,21 +341,21 @@
 								$(navigationSelector, obj).removeClass('cur');
 								$(gallerySelector, obj).removeClass('cur');
 															
-								var previousItem = $(previous).attr('class');
-								var selectedItem = $(this).attr('class');
+								previousItem = $(previous).attr('class');
+								selectedItem = $(this).attr('class');
 																	
 								checkContinous();
 	
 								$(this).addClass('cur');
-								var selectedIndex = $('ul:first > li.' + selectedItem, obj).index();
-								var difference = selectedIndex - (t - 1);							
+								selectedIndex = $('ul:first > li.' + selectedItem, obj).index();
+								difference = selectedIndex - (t - 1);							
 								
-								var nextDirection = difference > 0 ? true : false;								
-															
-								var differ = difference;
+								nextDirection = difference > 0 ? true : false;								
+										
+								differ = difference;
 								difference = Math.abs(difference);
 	
-								for (var i = 0; i < difference; i++) {
+								for (i = 0; i < difference; i++) {
 									setTags(nextDirection);
 								}
 	
@@ -373,28 +370,28 @@
 									$($('ul:first > li', obj)[t - 1]).fadeIn(options.speed, function () {
 										animationStarted = false;
 									});
-								} else {				
-									var correction = false;
-									var currentWidth = $('ul:first', obj).width();
-									var marginLeft = p + differ * w;
-									var animationMarginLeft = p + (doOverEdge * nextDirection * p / 8);
-									if (differ == t) {
+								} else {	
+									correction = false;
+									currentWidth = $('ul:first', obj).width();
+									marginLeft = p + differ * w;
+									animationMarginLeft = p + (doOverEdge * nextDirection * p / 8);
+									if (differ == t || options.itemsToDisplay > 1) {
 										marginLeft = 0;
 										animationMarginLeft -=  w;
 										correction = true;
-										var html = $('ul:first > li.' + previousItem, obj).html();
+										html = $('ul:first > li.' + previousItem, obj).html();
 										html = '<li style="float:left">' + html + '</li>';
-										$('ul:first', obj).width(currentWidth + w);
+										$('ul:first', obj).width(currentWidth + 2 * w);
 										$('ul:first', obj).prepend(html);										
 									}
 																		
 									$('ul:first', obj).css('margin-left', marginLeft);
-									$('ul:first', obj).animate({marginLeft: animationMarginLeft }, 
+									$('ul:first', obj).animate({'margin-left': animationMarginLeft }, 
 																options.speed, 
 																function () { 
 																	animationStarted = false; 
 																	if (correction) {
-																		$('ul:first > li:first', obj).remove();
+																		$('ul:first > li:first', obj).remove();																		
 																		$('ul:first', obj).width(currentWidth);
 																		$('ul:first', obj).css('margin-left', animationMarginLeft + w);
 																	}
@@ -422,7 +419,7 @@
                                     break;
                                 case 'previous':
                                     leftright = 0 - 1;
-                                    var ot = t + 1;
+                                    ot = t + 1;
                                     setTags(false, t - 1);
                                     setHeightOfActiveTag(t - 1);
                                     break;
@@ -431,7 +428,7 @@
                             };
 							
 							if (options.navigation) {
-								var selector = $($('ul:first > li', obj)[t - 1]).attr('class');
+								selector = $($('ul:first > li', obj)[t - 1]).attr('class');
 								$(navigationSelector, obj).each(function () {
 									if ($(this).hasClass(selector)) {
 										$(this).addClass('cur');
@@ -442,7 +439,7 @@
 							}
 							
 							if (options.showGallery) {							
-								var selector = $($('ul:first > li', obj)[t - 1]).attr('class');
+								selector = $($('ul:first > li', obj)[t - 1]).attr('class');
 								$(gallerySelector, obj).each(function () {
 									if ($(this).hasClass(selector)) {
 										$(this).addClass('cur');
@@ -457,23 +454,49 @@
 								$($('ul:first > li', obj)[t - 1]).fadeIn(options.speed, function () {
 									animationStarted = false;
 								});
-							} else {
-								$('ul:first', obj).css('margin-left', (ot - 1) * w * -1 + 'px');
-								$('ul:first', obj).animate(
-								{ marginLeft: p + (doOverEdge * leftright * p / 8) },
-									options.speed,
-									function () {
-										if (options.overedge) {
-											$('ul:first', obj).animate(
-												{ marginLeft: p },
-													options.speed / 3, function () {
-														animationStarted = false;
-													});
-										} else {
-											animationStarted = false;
-										}
+							} else {							
+								correction = false;
+								currentWidth = $('ul:first', obj).width();									
+								animationMarginLeft = p + (doOverEdge * leftright * p / 8);
+								marginLeft = (ot - 1) * w * -1;
+								if (options.itemsToDisplay > 2) {
+									marginLeft = animationMarginLeft;
+									wplus = 0;
+									if (leftright < 0) {
+										marginLeft -= w * (options.itemsToDisplay - 1);
 									}
-								);
+									
+									animationMarginLeft -= w;
+									correction = true;
+									index = t - options.itemsToDisplay;
+									index = index < 0 ? 0 : index;
+									html = $($('ul:first > li', obj)[index]).html();
+									html = '<li style="float:left">' + html + '</li>';
+									$('ul:first', obj).width(currentWidth + 2 * w);
+									$('ul:first', obj).prepend(html);
+									$('ul:first', obj).append(html);
+								}
+																	
+								$('ul:first', obj).css('margin-left', marginLeft + 'px');
+								$('ul:first', obj).animate({'margin-left': animationMarginLeft }, 
+															options.speed, 
+															function () {
+																if (options.overedge) {
+																	$('ul:first', obj).animate(
+																		{ 'margin-left': p },
+																			options.speed / 3, function () {
+																				animationStarted = false;
+																			});
+																} else { 
+																	animationStarted = false; 
+																	if (correction) {
+																		$('ul:first > li:first', obj).remove();
+																		$('ul:first > li:last', obj).remove();
+																		$('ul:first', obj).width(currentWidth);
+																		$('ul:first', obj).css('margin-left', animationMarginLeft + w + wplus);
+																	}
+																}
+															});								
 							}							
                         }
                     }
@@ -495,9 +518,9 @@
                 };
 
                 function setTags(isNext, ot) {
-                    var tagPosition = isNext ? 'first' : 'last';
+                    tagPosition = isNext ? 'first' : 'last';
                     $('ul:first > li:' + tagPosition, obj).wrap("<ul class='wrapping'>");
-                    var litag = $('ul.wrapping', obj).html();
+                    litag = $('ul.wrapping', obj).html();
                     $('ul.wrapping', obj).remove();
                     if (isNext) {
                         $('ul:first', obj).append(litag);
@@ -506,14 +529,14 @@
                     }
 
                     if (ot != null) {
-                        var cssClass = $($('ul:first > li', obj)[ot]).attr('class');
+                        cssClass = $($('ul:first > li', obj)[ot]).attr('class');
                         currentItemIndex = parseInt(cssClass.split('tagorder-')[1]);
                         checkContinous();
                     }
 
                     if (options.counter) {
                         if ($.trim(cssClass) != '') {
-                            $(obj).next().html(currentItemIndex + ' of ' + totalItems);
+                            $(obj).next().html(currentItemIndex + options.counterText + totalItems);
                         }
                     }
                 };
