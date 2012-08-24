@@ -1,5 +1,37 @@
+//
+// Copyright © 2011 
+// Aleksandar Gajic
+//
+// Alex Slider
+//
+// Script required
+// jquery.js version 1.4.2 or above
+//
+// Script to initialize slider
+// $('.slider').Slider();
+//	
+//	Minimum HTML for slider.
+//	<div class="slider">      
+//		<ul>            
+//			<li>
+//				<img src="image1.png" alt="image1" />
+//			</li>
+//			<li>
+//				<img src="image2.png" alt="image2" />
+//			</li>
+//		</ul>
+//	</div>
+//
+// Inside li tags you can put what ever you want, not just image tag.
+//
+// Recommended styles for gallery
+//	.preview_gallery { width: 100%;}
+//	.preview_gallery ul { list-style: none; position: relative; float: left; display: block; left: 50%; }
+//	.preview_gallery ul li { position: relative; float: left; display: block; right: 50%; }
+//	.preview_gallery ul li img {width: 50px !important; height: 50px !important;}
+
 (function ($) {
-    $.fn.Slider = function (options) {
+	$.fn.Slider = function (options) {
         var defaults = {
             prevBtnClass: 'prevBtn',
             prevBtnText: 'Previous',
@@ -12,17 +44,23 @@
             showControls: true,
             speed: 600,
             auto: true,
-            pause: 8000,
+            pause: 3000,
             width: -1,
             continuous: true,
             overedge: false,
             autoresize: false,
+			navigationWrapperClass : 'navigation-controls',
+			navigationClass : 'thumbNav',
             navigation: false,
             counter: false,
             fadeEffect: false,
             disableOnClick: true,
-			playPause: true,
-			timeToStartPlay : 0
+			playPause: false,
+			timeToStartPlay : 0,
+			galleryClass : 'preview_gallery',
+			galleryImageThumb : '',
+			showGallery : false,
+			complete: function() {}
         };
 
         var options = $.extend(defaults, options);
@@ -44,9 +82,26 @@
             var previousButtonSelector = 'span.' + options.prevBtnClass + ' a';
 			var playButtonSelector = 'span.' + options.playBtnClass;
 			var pauseButtonSelector = 'span.' + options.pauseBtnClass;
+			var navigationSelector = '.' + options.navigationWrapperClass + ' ul.'+ options.navigationClass +' li a';
+			var currentNavigationSelector = '.' + options.navigationWrapperClass + ' ul.'+ options.navigationClass +' li a.cur';
+			var gallerySelector = '.' + options.galleryClass + ' ul li a';
+			var currentGallerySelector = '.' + options.galleryClass + ' ul li a.cur';
+			var slectroForGalleryAndNavigation = '';
             var itemsInSlider;
 			var timeout;
-
+					
+			if (options.navigation) {
+				slectroForGalleryAndNavigation = navigationSelector;
+			}
+			
+			if (options.showGallery) {
+				if (slectroForGalleryAndNavigation != '') {
+					slectroForGalleryAndNavigation += ', ';					
+				}
+				
+				slectroForGalleryAndNavigation += gallerySelector;
+			}
+			
 			if (options.playPause) {
 				options.auto = false;
 			}
@@ -60,7 +115,6 @@
                     $(obj).animate(
 						{ height: newHeight + 10 },
 						options.speed * 3 / 4);
-
                 }
             }
 
@@ -78,7 +132,6 @@
                     $(this).addClass('tagorder-' + counter);
                     counter++;
                 });
-
 
                 itemsInSlider = s = $('ul:first > li', obj).length;
                 var w = $('ul:first > li', obj).width();
@@ -103,6 +156,28 @@
                     $('ul:first > li', obj).width(w);
                     $('ul:first > li > img', obj).width(w);
                 }
+				
+				if (options.showGallery) {
+					var html = '<div class="' + options.galleryClass + '">';
+					html += '<ul>';				
+					
+					var imageUrl = '';
+					for (var i = 0; i < s; i++) {
+						var cssClass;
+						if (i == 0) {
+							cssClass = (i + 1) + ' cur';
+						} else {
+							cssClass = (i + 1) + '';
+						}
+						
+						$liTag = $($('ul:first > li', obj)[i]);
+						imageUrl = $liTag.children('img:first').attr('src') + options.galleryImageThumb;
+						html += '<li><a href="javascript:;" class="tagorder-' + cssClass + '"><img src="' + imageUrl +'" alt="image1"/></a></li>';
+					}							
+					html +=	'</ul>';
+					html += '</div>';
+					$(obj).append(html);
+				}			
 
                 if (options.showControls && s != 1) {
                     var html = ' <span class="' + options.prevBtnClass + '"><a href=\"javascript:void(0);\"';
@@ -116,8 +191,7 @@
                 };
 				
 				if (options.playPause && s != 1) {
-					var html = ' <span class="' + options.playBtnClass + '"><a href=\"javascript:void(0);\"';
-                    
+					var html = ' <span class="' + options.playBtnClass + '"><a href=\"javascript:void(0);\"';                    
                     html += ' >' + options.playBtnText + '</a></span>';
                     html += ' <span class="' + options.pauseBtnClass + '"><a href=\"javascript:void(0);\">' + options.pauseBtnText + '</a></span>';
                     $(obj).append(html);					
@@ -131,7 +205,7 @@
                         $(pauseButtonSelector, obj).show();
 						options.auto = true;
 						setTimeout(function () {
-							animate('next', false);
+							commenceAnimation('forward', false);
 					}, options.timeToStartPlay);	
                     });
 					
@@ -146,14 +220,24 @@
                 if (options.showControls) {
                     $(nextButtonSelector, obj).click(function () {
                         if (!$(this).hasClass("disabled")) {
-                            animate('next', true, false);
+                            commenceAnimation('forward', true, false);
                         }
+						
+						if (options.playPause) {
+							$(pauseButtonSelector, obj).hide();
+							$(playButtonSelector, obj).show();
+						}
                     });
 
                     $(previousButtonSelector, obj).click(function () {
                         if (!$(this).hasClass("disabled")) {
-                            animate('prev', true, false);
+                            commenceAnimation('previous', true, false);
                         }
+						
+						if (options.playPause) {
+							$(pauseButtonSelector, obj).hide();
+							$(playButtonSelector, obj).show();
+						}
                     });
                 }
 
@@ -166,8 +250,8 @@
 
                 if (options.navigation && s > 1) {
                     var csscalss = '';
-                    html = '<div class="navigation-controls">';
-                    html += '<ul class="thumbNav">';
+                    html = '<div class="' + options.navigationWrapperClass + '">';
+                    html += '<ul class="' + options.navigationClass + '">';
                     for (var i = 0; i < s; i++) {
                         if (i == 0) {
                             cssclass = (i + 1) + ' cur';
@@ -232,49 +316,91 @@
                     $('ul:first > li', obj).css('float', 'left');
                 }
 
-                $('ul.thumbNav li a', obj).click(function () {
+                $(slectroForGalleryAndNavigation, obj).click(function () {				
                     if (!$(this).hasClass('cur')) {
+						if (options.playPause) {
+							$(pauseButtonSelector, obj).hide();
+							$(playButtonSelector, obj).show();
+						}
+						
                         if (!animationStarted) {
-                            animationStarted = true;
-                            var previous = $('ul.thumbNav li a.cur', obj);
-                            $('ul.thumbNav li a', obj).removeClass('cur');
-                            var previousItem = $(previous).attr('class');
-                            var selectedItem = $(this).attr('class');
-
-                            var cssClass = $(this).attr('class');
-                            currentItemIndex = parseInt(cssClass.split('tagorder-')[1]);
-                            checkContinous();
-
-                            $(this).addClass('cur');
-                            var selectedIndex = $('ul:first > li.' + selectedItem, obj).index();
-                            var difference = selectedIndex - (t - 1);
-                            var nextDirection = difference > 0 ? true : false;
-                            var differ = difference;
-                            difference = Math.abs(difference);
-
-                            for (var i = 0; i < difference; i++) {
-                                setTags(nextDirection);
-                            }
-
-                            if (options.autoresize) {
-                                setHeightOfActiveTag(t - 1);
-                            }
-
-                            animate('none', false, true);
-
-                            if (options.fadeEffect) {
-                                $('ul:first li.' + previousItem, obj).fadeOut(options.speed);
-                                $($('ul:first li', obj)[t - 1]).fadeIn(options.speed, function () {
-                                    animationStarted = false;
-                                });
-                            } else {
-                                $('ul:first', obj).css('margin-left', p + differ * w);
-                                $('ul:first', obj).animate(
-							{ marginLeft: p + (doOverEdge * nextDirection * p / 8) },
-							options.speed, function () {
-							    animationStarted = false;
-							});
-                            }
+							currentItemIndex = parseInt($(this).attr('class').split('tagorder-')[1]);
+							if (itemsInSlider == 2) {
+								if (currentItemIndex == 1) {
+									commenceAnimation('previous', true, false);
+								} else {
+									commenceAnimation('forward', true, false);									
+								}
+							} else {							
+								animationStarted = true;
+								var previous;
+								
+								if ($(currentNavigationSelector, obj).length) {
+									previous = $(currentNavigationSelector, obj);
+								} else {
+									previous = $(currentGallerySelector, obj);
+								}
+								
+								$(navigationSelector, obj).removeClass('cur');
+								$(gallerySelector, obj).removeClass('cur');
+															
+								var previousItem = $(previous).attr('class');
+								var selectedItem = $(this).attr('class');
+																	
+								checkContinous();
+	
+								$(this).addClass('cur');
+								var selectedIndex = $('ul:first > li.' + selectedItem, obj).index();
+								var difference = selectedIndex - (t - 1);							
+								
+								var nextDirection = difference > 0 ? true : false;								
+															
+								var differ = difference;
+								difference = Math.abs(difference);
+	
+								for (var i = 0; i < difference; i++) {
+									setTags(nextDirection);
+								}
+	
+								if (options.autoresize) {
+									setHeightOfActiveTag(t - 1);
+								}
+	
+								commenceAnimation('none', false, true);
+	
+								if (options.fadeEffect) {
+									$('ul:first > li.' + previousItem, obj).fadeOut(options.speed);
+									$($('ul:first > li', obj)[t - 1]).fadeIn(options.speed, function () {
+										animationStarted = false;
+									});
+								} else {				
+									var correction = false;
+									var currentWidth = $('ul:first', obj).width();
+									var marginLeft = p + differ * w;
+									var animationMarginLeft = p + (doOverEdge * nextDirection * p / 8);
+									if (differ == t) {
+										marginLeft = 0;
+										animationMarginLeft -=  w;
+										correction = true;
+										var html = $('ul:first > li.' + previousItem, obj).html();
+										html = '<li style="float:left">' + html + '</li>';
+										$('ul:first', obj).width(currentWidth + w);
+										$('ul:first', obj).prepend(html);										
+									}
+																		
+									$('ul:first', obj).css('margin-left', marginLeft);
+									$('ul:first', obj).animate({marginLeft: animationMarginLeft }, 
+																options.speed, 
+																function () { 
+																	animationStarted = false; 
+																	if (correction) {
+																		$('ul:first > li:first', obj).remove();
+																		$('ul:first', obj).width(currentWidth);
+																		$('ul:first', obj).css('margin-left', animationMarginLeft + w);
+																	}
+																});																	
+								}
+							}
                         }
                     }
                 });
@@ -283,18 +409,18 @@
                     setHeightOfActiveTag(t - 1, true);
                 }
 
-                function animate(direction, clicked, disableClick) {
+                function commenceAnimation(direction, clicked, disableClick) {
                     if (!disableClick) {						
                         if (s != 1 && !animationStarted) {
                             animationStarted = true;
                             switch (direction) {
-                                case "next":
+                                case 'forward':
                                     leftright = 1;
                                     ot = t - 1;
                                     setTags(true, ot);
                                     setHeightOfActiveTag(ot);
                                     break;
-                                case "prev":
+                                case 'previous':
                                     leftright = 0 - 1;
                                     var ot = t + 1;
                                     setTags(false, t - 1);
@@ -306,7 +432,18 @@
 							
 							if (options.navigation) {
 								var selector = $($('ul:first > li', obj)[t - 1]).attr('class');
-								$('ul.thumbNav li a', obj).each(function () {
+								$(navigationSelector, obj).each(function () {
+									if ($(this).hasClass(selector)) {
+										$(this).addClass('cur');
+									} else {
+										$(this).removeClass('cur');
+									}
+								});
+							}
+							
+							if (options.showGallery) {							
+								var selector = $($('ul:first > li', obj)[t - 1]).attr('class');
+								$(gallerySelector, obj).each(function () {
 									if ($(this).hasClass(selector)) {
 										$(this).addClass('cur');
 									} else {
@@ -345,14 +482,14 @@
                         clearTimeout(timeout);
                         if (!options.disableOnClick && !disableAutoForce) {
                             timeout = setTimeout(function () {
-                                animate('next', false, false);
+                                commenceAnimation('forward', false, false);
                             }, options.speed + options.pause);
                         }
                     }
 
-                    if (options.auto && direction == 'next' && !clicked) {
+                    if (options.auto && direction == 'forward' && !clicked) {
                         timeout = setTimeout(function () {
-                            animate('next', false, false);
+                            commenceAnimation('forward', false, false);
                         }, options.speed + options.pause);
                     };
                 };
@@ -406,9 +543,11 @@
                 
                 if (options.auto) {				
 					timeout = setTimeout(function () {
-						animate('next', false);
+						commenceAnimation('forward', false);
 					}, options.pause);					
                 };
+				
+				setTimeout(options.complete);
             }
         });
     };
