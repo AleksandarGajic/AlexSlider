@@ -36,11 +36,13 @@
             playBtnClass: 'playBtn',    // Css class for play button
             pauseBtnClass: 'pauseBtn',  // Css class for pause button
             showControls: true,         // Show next previous buttons
+			wrapControls: false,		// It will wrap controls with ul list
+			wrapControlsClass: 'slider-navigation',	// It will wrap controls with ul list
             speed: 600,                 // Speed for completing animation
             auto: true,                 // Auto rotate items in slider
             pause: 3000,                // Pause between two animations
             width: -1,                  // Set width for li tags in slider
-            continues: true,           // After sliding all items, return to first, otherwise will stop at last element
+            continues: true,			// After sliding all items, return to first, otherwise will stop at last element
             overedge: false,            // Animation effect to go over edge current item
             overedgePercentage: 12,     // Percentage of with/height to do overedge
             overedgeSpeed: 300,         // Speed of overedge animation
@@ -72,9 +74,9 @@
         this.each(function () {
             var s, realItemsCount, currentIndex, leftright,
                 animationStarted = false, obj = $(this), initialization = $(obj).hasClass('initialized'),
-                disableAutoForce = false, nextButtonSelector = 'span.' + options.nextBtnClass + ' a',
-                previousButtonSelector = 'span.' + options.prevBtnClass + ' a', playButtonSelector = 'span.' + options.playBtnClass,
-                pauseButtonSelector = 'span.' + options.pauseBtnClass,
+                disableAutoForce = false, nextButtonSelector = 'a.' + options.nextBtnClass,
+                previousButtonSelector = 'a.' + options.prevBtnClass, playButtonSelector = 'a.' + options.playBtnClass,
+                pauseButtonSelector = 'a.' + options.pauseBtnClass,
                 navigationSelector = '.' + options.navigationWrapperClass + ' ul.' + options.navigationClass + ' li a',
                 currentNavigationSelector = '.' + options.navigationWrapperClass + ' ul.' + options.navigationClass + ' li a.cur',
                 gallerySelector = '.' + options.galleryClass + ' ul li a',
@@ -371,21 +373,26 @@
                     $(obj).append(html);
                 }
 
-                if (options.showControls && s != 1) {
-                    html = ' <span class="' + options.prevBtnClass + '"><a href=\"javascript:void(0);\"';
+                if (options.showControls && s != 1) {					
+					html = options.wrapControls ? '<ul class="' + options.wrapControlsClass + '"><li>' : '';
+					
+					html += '<a href="javascript:void(0);" class="' + options.prevBtnClass;
 
                     if (!options.continues) {
-                        html += 'class="disabled"';
+                        html += ' disabled';
                     }
-                    html += ' >' + options.prevBtnText + '</a></span>';
-                    html += ' <span class="' + options.nextBtnClass + '"><a href=\"javascript:void(0);\">' + options.nextBtnText + '</a></span>';
+					
+                    html += '"><span>' + options.prevBtnText + '</span></a>';
+					html += options.wrapControls ? '</ll><li>' : '';
+                    html += ' <a href="javascript:void(0);" class="' + options.nextBtnClass + '"><span>' + options.nextBtnText + '</span></a>';
+					html += options.wrapControls ? '</ll></ul>' : '';
                     $(obj).append(html);
                 }
 
                 if (options.playPause && s != 1) {
-                    html = ' <span class="' + options.playBtnClass + '"><a href=\"javascript:void(0);\"';
-                    html += ' >' + options.playBtnText + '</a></span>';
-                    html += ' <span class="' + options.pauseBtnClass + '"><a href=\"javascript:void(0);\">' + options.pauseBtnText + '</a></span>';
+                    html = '<a href="javascript:void(0);" class="' + options.playBtnClass + '"><span';
+                    html += ' >' + options.playBtnText + '</span></a>';
+                    html += ' <a href="javascript:void(0);" class="' + options.pauseBtnClass + '"><span>' + options.pauseBtnText + '</span></a>';
                     $(obj).append(html);
                 }
 
