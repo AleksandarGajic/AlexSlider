@@ -10,10 +10,10 @@
             auto: true,
             pause: 8000,
             width: -1,
-            continuous: true,
-            overedge: false,
-            autoresize: false,
-            navigation: false,
+            continuous: false,  //for continous animations
+            overedge: false,	//used only for slide effect
+            autoresize: false,	// auto resize each element
+            navigation: false,	//
             counter: false,
             fadeEffect: false,
             disableOnClick: true
@@ -90,7 +90,7 @@
                     $('ul:first > li > img', obj).width(w);
                 }
 
-                if (options.showControls && s != 1) {
+                if (options.showControls && s > 1) {
                     var html = ' <span class="' + options.prevBtnClass + '"><a href=\"javascript:void(0);\"';
 
                     if (!options.continuous) {
@@ -101,7 +101,7 @@
                     $(obj).append(html);
                 };
 
-                if (options.showControls) {
+                if (options.showControls  && s > 1) {
                     $(nextButtonSelector, obj).click(function () {
                         if (!$(this).hasClass("disabled")) {
                             animate('next', true, false);
@@ -115,7 +115,7 @@
                     });
                 }
 
-                if (options.counter) {
+                if (options.counter && S > 0) {
                     html = '<p class="sliderInfo"> 1 of ' + s + '</p>';
                     $(obj).after(html);
                 }
