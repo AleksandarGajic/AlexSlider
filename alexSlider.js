@@ -1,6 +1,6 @@
 /******************************************************
 * 
-* Project name: Vega IT Sourcing Alex Slider - Version 1.5
+* Project name: Vega IT Sourcing Alex Slider - Version 1.5.2
 * Author: Vega IT Sourcing Alex Slider by Aleksandar Gajic
 * 
 ******************************************************/
@@ -66,7 +66,8 @@
 			setWrapper: false, 			// Set additional wrapper	
             complete: function () { },   // For additional scripts to execute after comleting initialization of 			
 			changedItem: null,	// For additional scripts to execute after item is changed. Example: function ($item) { alert($item.attr('class')); }; //$item is new displayed element
-			itemClicked: null	// For additional scripts to execute on item is clicked. Example: function (e, $item) { alert($item.attr('class')); },
+			itemClicked: null,	// For additional scripts to execute on item is clicked. Example: function (e, $item) { alert($item.attr('class')); },
+			dragging: false
         };
 
         options = $.extend(defaults, options);
@@ -85,7 +86,7 @@
                 counter, heightBody, newHeight, html, cssClass = '', imageUrl, length, extension,
                 litag, selector, index, selectedIndex, selectedItem, verticalWrapperSelector = '.' + options.verticalWrapper, 
 				$liTag, cssCalss, orientation = {}, overEdgeorientation = {}, movingLastFirstorientation = {}, itemSize, property,
-				$first, $last, sel;
+				$first, $last, sel, startX;
 
             if (options.navigation) {
                 slectroForGalleryAndNavigation = navigationSelector;
@@ -300,7 +301,7 @@
                 });
 				
 				t = 0;
-				if (options.continues && !options.fadeEffect) {				
+				if (options.continues && !options.fadeEffect) {
 					for (i = 0; i < options.itemsToDisplay; i++) {					
 						$first = $('ul:first > li', obj).eq(2 * i);
 						$last = $('ul:first > li', obj).eq(s - 1);
@@ -321,6 +322,26 @@
 					s+= 2 * options.itemsToDisplay;
 					t = options.itemsToDisplay;
 					itemsInSlider += options.itemsToDisplay; 
+				}
+				
+				if (options.dragging) {
+					$('img', obj).bind('dragstart', function(e) { 
+						e === null ? e.preventDefault() : e = window.event.preventDefault();						 
+					});
+					
+					$('li' , obj).mousedown(function (e) {
+						if (e === null) e = window.event;
+						 if (e.button === 1 && window.event !== null || e.button === 0) {
+							startX = e.clientX;
+						 }
+					}).mouseup(function (e) {
+						if (e === null) e = window.event;
+						 if (e.button == 1 && window.event != null || e.button == 0) {
+							if (Math.abs(startX - e.clientX) > ($(this).width() / 100 * 15)) { //If its more then 15% dragged than move slide
+								commenceAnimation(startX - e.clientX > 0 ? 'forward' : 'previous', true, false);
+							}
+						 }
+					});
 				}
 				
                 h = $('ul:first > li:first', obj).outerHeight(); // Calculating height of slider
