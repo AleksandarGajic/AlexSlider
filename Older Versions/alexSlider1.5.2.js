@@ -1,7 +1,6 @@
 /******************************************************
 * 
-* Project name: Vega IT Sourcing Alex Slider - Version 1.5.3
-* Date: 17.01.2013
+* Project name: Vega IT Sourcing Alex Slider - Version 1.5
 * Author: Vega IT Sourcing Alex Slider by Aleksandar Gajic
 * 
 ******************************************************/
@@ -68,8 +67,7 @@
             complete: function () { },   // For additional scripts to execute after comleting initialization of 			
 			changedItem: null,	// For additional scripts to execute after item is changed. Example: function ($item) { alert($item.attr('class')); }; //$item is new displayed element
 			itemClicked: null,	// For additional scripts to execute on item is clicked. Example: function (e, $item) { alert($item.attr('class')); },
-			dragging: false,
-			changeOrientation: true // For changing orienation of slides movement
+			dragging: false
         };
 
         options = $.extend(defaults, options);
@@ -244,32 +242,19 @@
                         switch (direction) {
                         case 'forward':
                             leftright = 1;							
-							if (options.changeOrientation) {
-								t -= 1;
-								if (t < 0) {
-									t = options.fadeEffect ? itemsInSlider - 1 : itemsInSlider;
-								}
-							} else {
-								t += 1;							
-								if (t > itemsInSlider || options.fadeEffect && t === itemsInSlider) {
-									t = options.continues && !options.fadeEffect ? options.itemsInSlider : 0;
-								}       
-							}							
+							t += 1;							
+							if (t > itemsInSlider || options.fadeEffect && t === itemsInSlider) {
+								t = options.continues && !options.fadeEffect ? options.itemsInSlider : 0;
+							}                            
                                                         
                             break;
                         case 'previous':
-                            leftright = 0 - 1;      
-							if (options.changeOrientation) {
-								t += 1;							
-								if (t > itemsInSlider || options.fadeEffect && t === itemsInSlider) {
-									t = options.continues && !options.fadeEffect ? options.itemsInSlider : 0;
-								}  
-							} else {
-								t -= 1;
-								if (t < 0) {
-									t = options.fadeEffect ? itemsInSlider - 1 : itemsInSlider;
-								}
+                            leftright = 0 - 1;                            
+							t -= 1;
+							if (t < 0) {
+								t = options.fadeEffect ? itemsInSlider - 1 : itemsInSlider;
 							}
+							                            
                             break;
                         default:
                             break;
