@@ -134,5 +134,20 @@
         speed: 1000,
         pause: 2500,
         autoresize: true
-    });   
+    }); 
+
+	$('.demo-responsive').Slider({
+		speed: 2000,
+        pause: 3000,
+		navigation: true,
+		responsive: true
+	});
+	
+	$('.demo-responsive2').Slider({
+		speed: 2000,
+        pause: 3000,
+		itemsToDisplay: 3,
+		navigation: true,
+		responsive: true
+	});
 });	

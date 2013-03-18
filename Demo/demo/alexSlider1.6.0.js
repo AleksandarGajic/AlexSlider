@@ -1,6 +1,7 @@
 /******************************************************
 * 
-* Project name: Vega IT Sourcing Alex Slider - Version 1.5
+* Project name: Vega IT Sourcing Alex Slider - Version 1.6
+* Date: 17.01.2013
 * Author: Vega IT Sourcing Alex Slider by Aleksandar Gajic
 * 
 ******************************************************/
@@ -36,11 +37,13 @@
             playBtnClass: 'playBtn',    // Css class for play button
             pauseBtnClass: 'pauseBtn',  // Css class for pause button
             showControls: true,         // Show next previous buttons
+			wrapControls: false,		// It will wrap controls with ul list
+			wrapControlsClass: 'slider-navigation',	// It will wrap controls with ul list
             speed: 600,                 // Speed for completing animation
             auto: true,                 // Auto rotate items in slider
             pause: 3000,                // Pause between two animations
             width: -1,                  // Set width for li tags in slider
-            continues: true,           // After sliding all items, return to first, otherwise will stop at last element
+            continues: true,			// After sliding all items, return to first, otherwise will stop at last element
             overedge: false,            // Animation effect to go over edge current item
             overedgePercentage: 12,     // Percentage of with/height to do overedge
             overedgeSpeed: 300,         // Speed of overedge animation
@@ -64,7 +67,10 @@
 			setWrapper: false, 			// Set additional wrapper	
             complete: function () { },   // For additional scripts to execute after comleting initialization of 			
 			changedItem: null,	// For additional scripts to execute after item is changed. Example: function ($item) { alert($item.attr('class')); }; //$item is new displayed element
-			itemClicked: null	// For additional scripts to execute on item is clicked. Example: function (e, $item) { alert($item.attr('class')); },
+			itemClicked: null,	// For additional scripts to execute on item is clicked. Example: function (e, $item) { alert($item.attr('class')); },
+			dragging: false,
+			changeOrientation: false, // For changing orienation of slides movement,
+			responsive: false // For enabling responsive behaviour
         };
 
         options = $.extend(defaults, options);
@@ -72,9 +78,9 @@
         this.each(function () {
             var s, realItemsCount, currentIndex, leftright,
                 animationStarted = false, obj = $(this), initialization = $(obj).hasClass('initialized'),
-                disableAutoForce = false, nextButtonSelector = 'span.' + options.nextBtnClass + ' a',
-                previousButtonSelector = 'span.' + options.prevBtnClass + ' a', playButtonSelector = 'span.' + options.playBtnClass,
-                pauseButtonSelector = 'span.' + options.pauseBtnClass,
+                disableAutoForce = false, nextButtonSelector = 'a.' + options.nextBtnClass,
+                previousButtonSelector = 'a.' + options.prevBtnClass, playButtonSelector = 'a.' + options.playBtnClass,
+                pauseButtonSelector = 'a.' + options.pauseBtnClass,
                 navigationSelector = '.' + options.navigationWrapperClass + ' ul.' + options.navigationClass + ' li a',
                 currentNavigationSelector = '.' + options.navigationWrapperClass + ' ul.' + options.navigationClass + ' li a.cur',
                 gallerySelector = '.' + options.galleryClass + ' ul li a',
@@ -83,7 +89,7 @@
                 counter, heightBody, newHeight, html, cssClass = '', imageUrl, length, extension,
                 litag, selector, index, selectedIndex, selectedItem, verticalWrapperSelector = '.' + options.verticalWrapper, 
 				$liTag, cssCalss, orientation = {}, overEdgeorientation = {}, movingLastFirstorientation = {}, itemSize, property,
-				$first, $last, sel;
+				$first, $last, sel, startX, inResize, aspectRatio;
 
             if (options.navigation) {
                 slectroForGalleryAndNavigation = navigationSelector;
@@ -183,11 +189,13 @@
 			}
 				
 			function animationAdditionalTasks(clicked) {
-				cssClass = $('ul:first > li', obj).eq(t).attr('class');
+				cssClass = $('ul:first > li', obj).eq(t).attr('class');			
 				currentIndex = parseInt(cssClass.split('tagorder-')[1], 10);
 				if (options.navigation) {
 					selector = $('ul:first > li', obj).eq(t).attr('class');
-					selector = selector.replace('clone ', '');
+					if (selector) {
+						selector = selector.replace('clone ', '');
+					}
 					$(navigationSelector, obj).each(function () {
 						if ($(this).hasClass(selector)) {
 							$(this).addClass('cur');
@@ -232,26 +240,39 @@
 				checkContinues();
 			}
 			
-            function commenceAnimation(direction, clicked, disableClick) {				
+            function commenceAnimation(direction, clicked, disableClick) {
                 if (!disableClick) {
                     if (s != 1 && !animationStarted) {
                         animationStarted = true;
                         switch (direction) {
                         case 'forward':
                             leftright = 1;							
-							t += 1;							
-							if (t > itemsInSlider || options.fadeEffect && t === itemsInSlider) {
-								t = options.continues && !options.fadeEffect ? options.itemsInSlider : 0;
-							}                            
+							if (options.changeOrientation) {
+								t -= 1;
+								if (t < 0) {
+									t = options.fadeEffect ? itemsInSlider - 1 : itemsInSlider;
+								}
+							} else {
+								t += 1;							
+								if (t > itemsInSlider || options.fadeEffect && t === itemsInSlider) {
+									t = options.continues && !options.fadeEffect ? options.itemsInSlider : 0;
+								}       
+							}							
                                                         
                             break;
                         case 'previous':
-                            leftright = 0 - 1;                            
-							t -= 1;
-							if (t < 0) {
-								t = options.fadeEffect ? itemsInSlider - 1 : itemsInSlider;
+                            leftright = 0 - 1;      
+							if (options.changeOrientation) {
+								t += 1;							
+								if (t > itemsInSlider || options.fadeEffect && t === itemsInSlider) {
+									t = options.continues && !options.fadeEffect ? options.itemsInSlider : 0;
+								}  
+							} else {
+								t -= 1;
+								if (t < 0) {
+									t = options.fadeEffect ? itemsInSlider - 1 : itemsInSlider;
+								}
 							}
-							                            
                             break;
                         default:
                             break;
@@ -279,10 +300,59 @@
                     }, options.speed + options.pause);
                 }
             }
+			
+			function resizeingSlider() {
+				animationStarted = true;
+				inResize = true;
+				if(this.resizeTO) clearTimeout(this.resizeTO);
+				this.resizeTO = setTimeout(function() {
+					$(this).trigger('resizeEnd');
+				}, 300);
+				
+				w = $(obj).outerWidth();
+				if (!options.orientationVertical) {
+					w = w / options.itemsToDisplay;
+				}
+				
+				aspectRatio = $('ul:first > li img:first', obj).width() / $('ul:first > li img:first', obj).height();
+				$('ul:first > li', obj).width(w);
+				$('ul:first > li img', obj).width(w);
+				
+				h = w / aspectRatio;
+				
+				if (options.orientationVertical) {
+					h = h / options.itemsToDisplay;
+				}
+				
+				$('ul:first > li img', obj).height(h);
+				$('ul:first > li', obj).height(h);
+				$(obj).css('height', h);
+				
+				if (options.orientationVertical) {
+					$(verticalWrapperSelector, obj).height(h);
+					$('ul:first', obj).height(h * s);
+					$('ul:first', obj).width(w);
+				} else {
+					$('ul:first', obj).height(h);
+					$('ul:first', obj).width(w * s);
+				}
+				
+				property = 'margin-left';
+				newMargin = t * w * (-1)
+				if (options.orientationVertical) {					
+					property = 'margin-top';
+					itemSize = h;
+					newMargin = t * h * (-1);
+				}
+				
+				$('ul:first', obj).css(property, newMargin);
+			}
 
             if (options.autoresize) {
                 heightBody = $('ul:first > li:first', obj).height();
-                $(obj).css('height', heightBody + 'px');
+				if (!options.responsive) {
+					$(obj).css('height', heightBody + 'px');
+				}
             }
 
 			// Initialize slider
@@ -298,7 +368,7 @@
                 });
 				
 				t = 0;
-				if (options.continues && !options.fadeEffect) {				
+				if (options.continues && !options.fadeEffect) {
 					for (i = 0; i < options.itemsToDisplay; i++) {					
 						$first = $('ul:first > li', obj).eq(2 * i);
 						$last = $('ul:first > li', obj).eq(s - 1);
@@ -321,8 +391,28 @@
 					itemsInSlider += options.itemsToDisplay; 
 				}
 				
+				if (options.dragging) {
+					$('img', obj).bind('dragstart', function(e) { 
+						e === null ? e.preventDefault() : e = window.event.preventDefault();						 
+					});
+					
+					$('li' , obj).mousedown(function (e) {
+						if (e === null) e = window.event;
+						 if (e.button === 1 && window.event !== null || e.button === 0) {
+							startX = e.clientX;
+						 }
+					}).mouseup(function (e) {
+						if (e === null) e = window.event;
+						 if (e.button == 1 && window.event != null || e.button == 0) {
+							if (Math.abs(startX - e.clientX) > ($(this).width() / 100 * 15)) { //If its more then 15% dragged than move slide
+								commenceAnimation(startX - e.clientX > 0 ? 'forward' : 'previous', true, false);
+							}
+						 }
+					});
+				}
+				
                 h = $('ul:first > li:first', obj).outerHeight(); // Calculating height of slider
-                w = $('ul:first > li:first', obj).outerWidth(); // Calculating width of slider item				
+                w = $('ul:first > li:first', obj).outerWidth(); // Calculating width of slider item		
                 if ($('ul:first > li img', obj).length) {
                     $('ul:first > li img', obj).each(function () {
                         $('ul:first > li img', obj).eq(0).load(function () {
@@ -336,10 +426,49 @@
                     h = $('ul:first li', obj).outerHeight();
                     $(obj).outerHeight(h);
                 }
-
+				
                 if (options.width !== -1) {
                     w = options.width;                                       
                 }
+				
+				if (options.responsive) {
+					aspectRatio = $('ul:first > li img:first', obj).width() / $('ul:first > li img:first', obj).height();
+					property = 'margin-left';
+					if (!options.orientationVertical) {
+						w = w / options.itemsToDisplay;
+					}
+					
+					itemSize = w;
+					$('ul:first > li img', obj).width(w);
+					$('ul:first > li', obj).width(w);
+					h = w / aspectRatio;
+					if (options.orientationVertical) {
+						h = h /options.itemsToDisplay;
+						property = 'margin-top';
+						itemSize = h;
+					}
+					$('ul:first > li img', obj).height(h);
+					$('ul:first > li', obj).height(h);
+					
+					$(obj).css('width', '100%');
+					$(obj).css('height', h);
+					
+					$(window).bind('resizeEnd', function() {
+						animationStarted = false;
+						inResize = false;
+					});
+					
+					$(window).resize(function() {
+						if (!animationStarted || inResize) {
+							resizeingSlider();
+						} else {
+							$('ul:first', obj).stop();
+							animationStarted = false;
+							animationFinished(movingLastFirstorientation, property, itemSize);
+							resizeingSlider();
+						}
+					});
+				}
 
                 if (options.showGallery) {
                     html = '<div class="' + options.galleryClass + '">';
@@ -371,21 +500,26 @@
                     $(obj).append(html);
                 }
 
-                if (options.showControls && s != 1) {
-                    html = ' <span class="' + options.prevBtnClass + '"><a href=\"javascript:void(0);\"';
+                if (options.showControls && s != 1) {					
+					html = options.wrapControls ? '<ul class="' + options.wrapControlsClass + '"><li>' : '';
+					
+					html += '<a href="javascript:void(0);" class="' + options.prevBtnClass;
 
                     if (!options.continues) {
-                        html += 'class="disabled"';
+                        html += ' disabled';
                     }
-                    html += ' >' + options.prevBtnText + '</a></span>';
-                    html += ' <span class="' + options.nextBtnClass + '"><a href=\"javascript:void(0);\">' + options.nextBtnText + '</a></span>';
+					
+                    html += '"><span>' + options.prevBtnText + '</span></a>';
+					html += options.wrapControls ? '</ll><li>' : '';
+                    html += ' <a href="javascript:void(0);" class="' + options.nextBtnClass + '"><span>' + options.nextBtnText + '</span></a>';
+					html += options.wrapControls ? '</ll></ul>' : '';
                     $(obj).append(html);
                 }
 
                 if (options.playPause && s != 1) {
-                    html = ' <span class="' + options.playBtnClass + '"><a href=\"javascript:void(0);\"';
-                    html += ' >' + options.playBtnText + '</a></span>';
-                    html += ' <span class="' + options.pauseBtnClass + '"><a href=\"javascript:void(0);\">' + options.pauseBtnText + '</a></span>';
+                    html = '<a href="javascript:void(0);" class="' + options.playBtnClass + '"><span';
+                    html += ' >' + options.playBtnText + '</span></a>';
+                    html += ' <a href="javascript:void(0);" class="' + options.pauseBtnClass + '"><span>' + options.pauseBtnText + '</span></a>';
                     $(obj).append(html);
                 }
 
@@ -458,7 +592,8 @@
                     $('ul:first > li', obj).height(h);
                 }
 
-                obj.css("overflow", "hidden").css('position', 'relative');
+                obj.css("overflow", "hidden");
+				if (!options.responsive) obj.css('position', 'relative');
 				if (!options.fadeEffect) {
 					if (options.orientationVertical) {
 						$('ul:first', obj).css('margin-top', t * h * (-1)+ 'px');
@@ -474,7 +609,9 @@
                         $('ul:first', obj).css('height', s * h).wrap('<div class="' + options.verticalWrapper + '"/>');
                         $(verticalWrapperSelector, obj).css('height', h * options.itemsToDisplay + 'px').css('overflow', 'hidden');
                     } else {
+						if (!options.responsive) {
 						$(obj).css('width', w * options.itemsToDisplay + 'px');
+						}
                         $('ul:first', obj).css('width', s * w).find('> li').css('float', 'left');
 						
 						if (options.setWrapper) {

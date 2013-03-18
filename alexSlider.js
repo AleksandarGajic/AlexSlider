@@ -1,6 +1,6 @@
 /******************************************************
 * 
-* Project name: Vega IT Sourcing Alex Slider - Version 1.5.3
+* Project name: Vega IT Sourcing Alex Slider - Version 1.6
 * Date: 17.01.2013
 * Author: Vega IT Sourcing Alex Slider by Aleksandar Gajic
 * 
@@ -69,7 +69,8 @@
 			changedItem: null,	// For additional scripts to execute after item is changed. Example: function ($item) { alert($item.attr('class')); }; //$item is new displayed element
 			itemClicked: null,	// For additional scripts to execute on item is clicked. Example: function (e, $item) { alert($item.attr('class')); },
 			dragging: false,
-			changeOrientation: true // For changing orienation of slides movement
+			changeOrientation: false, // For changing orienation of slides movement,
+			responsive: false // For enabling responsive behaviour
         };
 
         options = $.extend(defaults, options);
@@ -88,7 +89,7 @@
                 counter, heightBody, newHeight, html, cssClass = '', imageUrl, length, extension,
                 litag, selector, index, selectedIndex, selectedItem, verticalWrapperSelector = '.' + options.verticalWrapper, 
 				$liTag, cssCalss, orientation = {}, overEdgeorientation = {}, movingLastFirstorientation = {}, itemSize, property,
-				$first, $last, sel, startX;
+				$first, $last, sel, startX, inResize, aspectRatio;
 
             if (options.navigation) {
                 slectroForGalleryAndNavigation = navigationSelector;
@@ -188,11 +189,13 @@
 			}
 				
 			function animationAdditionalTasks(clicked) {
-				cssClass = $('ul:first > li', obj).eq(t).attr('class');
+				cssClass = $('ul:first > li', obj).eq(t).attr('class');			
 				currentIndex = parseInt(cssClass.split('tagorder-')[1], 10);
 				if (options.navigation) {
 					selector = $('ul:first > li', obj).eq(t).attr('class');
-					selector = selector.replace('clone ', '');
+					if (selector) {
+						selector = selector.replace('clone ', '');
+					}
 					$(navigationSelector, obj).each(function () {
 						if ($(this).hasClass(selector)) {
 							$(this).addClass('cur');
@@ -237,7 +240,7 @@
 				checkContinues();
 			}
 			
-            function commenceAnimation(direction, clicked, disableClick) {				
+            function commenceAnimation(direction, clicked, disableClick) {
                 if (!disableClick) {
                     if (s != 1 && !animationStarted) {
                         animationStarted = true;
@@ -297,10 +300,59 @@
                     }, options.speed + options.pause);
                 }
             }
+			
+			function resizeingSlider() {
+				animationStarted = true;
+				inResize = true;
+				if(this.resizeTO) clearTimeout(this.resizeTO);
+				this.resizeTO = setTimeout(function() {
+					$(this).trigger('resizeEnd');
+				}, 300);
+				
+				w = $(obj).outerWidth();
+				if (!options.orientationVertical) {
+					w = w / options.itemsToDisplay;
+				}
+				
+				aspectRatio = $('ul:first > li img:first', obj).width() / $('ul:first > li img:first', obj).height();
+				$('ul:first > li', obj).width(w);
+				$('ul:first > li img', obj).width(w);
+				
+				h = w / aspectRatio;
+				
+				if (options.orientationVertical) {
+					h = h / options.itemsToDisplay;
+				}
+				
+				$('ul:first > li img', obj).height(h);
+				$('ul:first > li', obj).height(h);
+				$(obj).css('height', h);
+				
+				if (options.orientationVertical) {
+					$(verticalWrapperSelector, obj).height(h);
+					$('ul:first', obj).height(h * s);
+					$('ul:first', obj).width(w);
+				} else {
+					$('ul:first', obj).height(h);
+					$('ul:first', obj).width(w * s);
+				}
+				
+				property = 'margin-left';
+				newMargin = t * w * (-1)
+				if (options.orientationVertical) {					
+					property = 'margin-top';
+					itemSize = h;
+					newMargin = t * h * (-1);
+				}
+				
+				$('ul:first', obj).css(property, newMargin);
+			}
 
             if (options.autoresize) {
                 heightBody = $('ul:first > li:first', obj).height();
-                $(obj).css('height', heightBody + 'px');
+				if (!options.responsive) {
+					$(obj).css('height', heightBody + 'px');
+				}
             }
 
 			// Initialize slider
@@ -360,7 +412,7 @@
 				}
 				
                 h = $('ul:first > li:first', obj).outerHeight(); // Calculating height of slider
-                w = $('ul:first > li:first', obj).outerWidth(); // Calculating width of slider item				
+                w = $('ul:first > li:first', obj).outerWidth(); // Calculating width of slider item		
                 if ($('ul:first > li img', obj).length) {
                     $('ul:first > li img', obj).each(function () {
                         $('ul:first > li img', obj).eq(0).load(function () {
@@ -374,10 +426,49 @@
                     h = $('ul:first li', obj).outerHeight();
                     $(obj).outerHeight(h);
                 }
-
+				
                 if (options.width !== -1) {
                     w = options.width;                                       
                 }
+				
+				if (options.responsive) {
+					aspectRatio = $('ul:first > li img:first', obj).width() / $('ul:first > li img:first', obj).height();
+					property = 'margin-left';
+					if (!options.orientationVertical) {
+						w = w / options.itemsToDisplay;
+					}
+					
+					itemSize = w;
+					$('ul:first > li img', obj).width(w);
+					$('ul:first > li', obj).width(w);
+					h = w / aspectRatio;
+					if (options.orientationVertical) {
+						h = h /options.itemsToDisplay;
+						property = 'margin-top';
+						itemSize = h;
+					}
+					$('ul:first > li img', obj).height(h);
+					$('ul:first > li', obj).height(h);
+					
+					$(obj).css('width', '100%');
+					$(obj).css('height', h);
+					
+					$(window).bind('resizeEnd', function() {
+						animationStarted = false;
+						inResize = false;
+					});
+					
+					$(window).resize(function() {
+						if (!animationStarted || inResize) {
+							resizeingSlider();
+						} else {
+							$('ul:first', obj).stop();
+							animationStarted = false;
+							animationFinished(movingLastFirstorientation, property, itemSize);
+							resizeingSlider();
+						}
+					});
+				}
 
                 if (options.showGallery) {
                     html = '<div class="' + options.galleryClass + '">';
@@ -501,7 +592,8 @@
                     $('ul:first > li', obj).height(h);
                 }
 
-                obj.css("overflow", "hidden").css('position', 'relative');
+                obj.css("overflow", "hidden");
+				if (!options.responsive) obj.css('position', 'relative');
 				if (!options.fadeEffect) {
 					if (options.orientationVertical) {
 						$('ul:first', obj).css('margin-top', t * h * (-1)+ 'px');
@@ -517,7 +609,9 @@
                         $('ul:first', obj).css('height', s * h).wrap('<div class="' + options.verticalWrapper + '"/>');
                         $(verticalWrapperSelector, obj).css('height', h * options.itemsToDisplay + 'px').css('overflow', 'hidden');
                     } else {
+						if (!options.responsive) {
 						$(obj).css('width', w * options.itemsToDisplay + 'px');
+						}
                         $('ul:first', obj).css('width', s * w).find('> li').css('float', 'left');
 						
 						if (options.setWrapper) {
