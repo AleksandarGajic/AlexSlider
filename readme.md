@@ -12,7 +12,7 @@ AlexSlider is responsive slider.
 <code>$('.slider').Slider();</code>
 
 ######HTML for slider:
-<code>
+<pre><code>
 &lt;div class="slider"&gt;
       	&lt;ul&gt;
 		&lt;li&gt;
@@ -23,10 +23,10 @@ AlexSlider is responsive slider.
 		&lt;/li&gt;
 	&lt;/ul&gt;
  &lt;/div&gt;
-</code>
+</code></pre>
 
 ######CSS for slider:
-<code> 
+<pre><code> 
 .slider {
 	width: 350px;
 	float: left;
@@ -36,7 +36,7 @@ AlexSlider is responsive slider.
 	width: 350px;
 	height: 200px;
 }
-</code> 
+</code> </pre>
 
 ######In order to activate slider to be responsive its only needed to set property reponsive to true
 <code>
