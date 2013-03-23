@@ -13,26 +13,26 @@ AlexSlider is responsive slider.
 
 ######HTML for slider:
 <code>
-<div class="slider">
-      	<ul>
-		<li>
-			<img src="image1.png" alt="image1" />
-		</li>
-		<li>
-			<img src="image2.png" alt="image2" />
-		</li>
-	</ul>
- </div> 
+&lt;div class="slider"&gt;
+      	&lt;ul&gt;
+		&lt;li&gt;
+			&lt;img src="image1.png" alt="image1" /&gt;
+		&lt;/li&gt;
+		&lt;li&gt;
+			&gt;img src="image2.png" alt="image2" /&gt;
+		&lt;/li&gt;
+	&lt;/ul&gt;
+ &lt;/div&gt;
 </code>
 
 ######CSS for slider:
 <code> 
-#demo {
+.slider {
 	width: 350px;
 	float: left;
 	clear: left;
 }
-#demo img {
+.slider img {
 	width: 350px;
 	height: 200px;
 }
@@ -85,6 +85,6 @@ $('.slider').Slider({
             complete: function () { },   // For additional scripts to execute after comleting initialization of 			
 			changedItem: null,	// For additional scripts to execute after item is changed. Example: function ($item) { alert($item.attr('class')); }; //$item is new displayed element
 			itemClicked: null,	// For additional scripts to execute on item is clicked. Example: function (e, $item) { alert($item.attr('class')); },
-			dragging: false,
+			dragging: false,        //Enables sliding images by draging the slide.
 			changeOrientation: false, // For changing orienation of slides movement,
 			responsive: false // For enabling responsive behaviour
