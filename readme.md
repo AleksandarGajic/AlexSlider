@@ -14,7 +14,7 @@ AlexSlider is responsive slider.
 ######HTML for slider:
 <pre><code>
 &lt;div class="slider"&gt;
-      	&lt;ul&gt;
+	&lt;ul&gt;
 		&lt;li&gt;
 			&lt;img src="image1.png" alt="image1" /&gt;
 		&lt;/li&gt;
@@ -41,9 +41,48 @@ AlexSlider is responsive slider.
 ######In order to activate slider to be responsive its only needed to set property reponsive to true
 <code>
 $('.slider').Slider({
-		responsive: true
-	});
+	responsive: true
+});
 </code>
+
+######To activate controls you have two options, onde for arrows, and second for navigation
+<pre>
+<code>
+$('.slider').Slider({
+	showControls: true,
+	navigation: true
+});
+</code>
+</pre>
+</code>
+
+######To make slider vertical
+<pre>
+<code>
+$('.slider').Slider({
+	orientationVertical: true
+});
+</pre>
+</code>
+
+######In order to change slides animation to fade effect
+<pre>
+<code>
+$('.slider').Slider({
+	fadeEffect: true
+});
+</pre>
+</code>
+
+######If you want to change animations from going from left to right(up to down if its vertical oriented)
+<pre>
+<code>
+$('.slider').Slider({
+	changeOrientation: true
+});
+</pre>
+</code>
+
 ###Default properties for slider
             prevBtnClass: 'prevBtn',    // Css class for previous button
             prevBtnText: 'Previous',    // Text for previous button
