@@ -1,7 +1,7 @@
 /******************************************************
 * 
-* Project name: Vega IT Sourcing Alex Slider - Version 1.6.1
-* Date: 12.03.2014
+* Project name: Vega IT Sourcing Alex Slider - Version 1.6
+* Date: 17.01.2013
 * Author: Vega IT Sourcing Alex Slider by Aleksandar Gajic
 * 
 ******************************************************/
@@ -64,11 +64,11 @@
             showGallery: false,         // Show/hide thumbnail images for navigation, it takes first img tag in li tag-s of slider
             counterText: ' of ',        // Text between counter numbers
 			classWrapper: 'inner-wrapper', // Additional wrapper class name
-			setWrapper: true, 			// Set additional wrapper	
+			setWrapper: false, 			// Set additional wrapper	
             complete: function () { },   // For additional scripts to execute after comleting initialization of 			
 			changedItem: null,	// For additional scripts to execute after item is changed. Example: function ($item) { alert($item.attr('class')); }; //$item is new displayed element
 			itemClicked: null,	// For additional scripts to execute on item is clicked. Example: function (e, $item) { alert($item.attr('class')); },
-			swipe: false, //Change slides swiping left/right
+			dragging: false,
 			changeOrientation: false, // For changing orienation of slides movement,
 			responsive: false // For enabling responsive behaviour
         };
@@ -89,7 +89,7 @@
                 counter, heightBody, newHeight, html, cssClass = '', imageUrl, length, extension,
                 litag, selector, index, selectedIndex, selectedItem, verticalWrapperSelector = '.' + options.verticalWrapper, 
 				$liTag, cssCalss, orientation = {}, overEdgeorientation = {}, movingLastFirstorientation = {}, itemSize, property,
-				$first, $last, sel, startX, endX, inResize, aspectRatio;
+				$first, $last, sel, startX, inResize, aspectRatio;
 
             if (options.navigation) {
                 slectroForGalleryAndNavigation = navigationSelector;
@@ -189,15 +189,13 @@
 			}
 				
 			function animationAdditionalTasks(clicked) {
-				cssClass = $('ul:first > li', obj).eq(t).attr('class');					
-				
+				cssClass = $('ul:first > li', obj).eq(t).attr('class');			
+				currentIndex = parseInt(cssClass.split('tagorder-')[1], 10);
 				if (options.navigation) {
-					selector = $('ul:first > li', obj).eq(t).attr('class');					
+					selector = $('ul:first > li', obj).eq(t).attr('class');
 					if (selector) {
-						selector = selector.replace('ng-scope ', '');
 						selector = selector.replace('clone ', '');
 					}
-
 					$(navigationSelector, obj).each(function () {
 						if ($(this).hasClass(selector)) {
 							$(this).addClass('cur');
@@ -220,7 +218,6 @@
 				}
 				
 				if (options.counter) {
-					currentIndex = parseInt(cssClass.split('tagorder-')[1], 10);
 					html = currentIndex + ' of ' + realItemsCount;
 					if ($(obj).next().hasClass('sliderInfo')) {
 						$(obj).next().html(html);
@@ -297,7 +294,7 @@
                     }
                 }
 				
-                if (options.auto && direction == 'forward' && !clicked && $(obj)) {
+                if (options.auto && direction == 'forward' && !clicked) {
                     timeout = setTimeout(function () {
                         commenceAnimation('forward', false, false);
                     }, options.speed + options.pause);
@@ -394,28 +391,21 @@
 					itemsInSlider += options.itemsToDisplay; 
 				}
 				
-				if (options.swipe) {
+				if (options.dragging) {
 					$('img', obj).bind('dragstart', function(e) { 
 						e === null ? e.preventDefault() : e = window.event.preventDefault();						 
 					});
 					
-					$('li' , obj).on('mousedown touchstart', function (e) {
-					    if (e === null) e = window.event;
-					    if ((e.button === 1 && window.event !== null || e.button === 0) || (e.originalEvent && e.originalEvent.touches[0])) {
-					        endX = 0;
-					        startX = e.clientX ? e.clientX : e.originalEvent.touches[0].clientX;
-						 }
-					}).on('touchmove', function (e) {
-					    if (e === null) e = window.event;
-					    if (e.originalEvent.touches[0]) {
-					        endX = e.originalEvent.touches[0].clientX;
-					    }
-					}).on('mouseup touchend', function (e) {
+					$('li' , obj).mousedown(function (e) {
 						if (e === null) e = window.event;
-						if ((e.button === 1 && window.event !== null || e.button === 0) || e.type == "touchend") {
-						    var end = e.clientX ? e.clientX : endX;
-						    if (Math.abs(startX - end) > ($(this).width() / 100 * 15)) { //If its more then 15% dragged than move slide
-						        commenceAnimation(startX - end > 0 ? 'forward' : 'previous', true, false);
+						 if (e.button === 1 && window.event !== null || e.button === 0) {
+							startX = e.clientX;
+						 }
+					}).mouseup(function (e) {
+						if (e === null) e = window.event;
+						 if (e.button == 1 && window.event != null || e.button == 0) {
+							if (Math.abs(startX - e.clientX) > ($(this).width() / 100 * 15)) { //If its more then 15% dragged than move slide
+								commenceAnimation(startX - e.clientX > 0 ? 'forward' : 'previous', true, false);
 							}
 						 }
 					});
@@ -602,7 +592,7 @@
                     $('ul:first > li', obj).height(h);
                 }
 
-                //obj.css("overflow", "hidden");
+                obj.css("overflow", "hidden");
 				if (!options.responsive) obj.css('position', 'relative');
 				if (!options.fadeEffect) {
 					if (options.orientationVertical) {
@@ -622,13 +612,13 @@
 						if (!options.responsive) {
 						$(obj).css('width', w * options.itemsToDisplay + 'px');
 						}
-                        $('ul:first', obj).css('width', s * w).find('> li').css('float', 'left');					
+                        $('ul:first', obj).css('width', s * w).find('> li').css('float', 'left');
+						
+						if (options.setWrapper) {
+							$('ul:first', obj).wrap('<div class="' + options.classWrapper + '"/>');
+						}
                     }
                 }
-
-                if (options.setWrapper) {
-					$('ul:first', obj).wrap('<div class="' + options.classWrapper + '"/>');
-				}
 
                 $(slectroForGalleryAndNavigation, obj).click(function () {
                     if (!$(this).hasClass('cur')) {
